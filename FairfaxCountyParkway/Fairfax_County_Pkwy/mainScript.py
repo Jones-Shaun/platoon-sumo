@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 """
 SUMO Platoon Analysis Script with Simpla Integration
 ---------------------------------------------------
@@ -17,6 +14,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import defaultdict
+import time
 
 # Check if SUMO_HOME is in environment variables and add to path
 if 'SUMO_HOME' in os.environ:
@@ -46,6 +44,23 @@ class PlatoonAnalyzer:
                                vehicles with 'platoon' in their ID will be considered
             output_dir (str): Directory to save results
         """
+        
+        # Check SUMO environment
+        if 'SUMO_HOME' not in os.environ:
+            raise EnvironmentError("SUMO_HOME environment variable not set")
+            
+        # Verify SUMO installation
+        try:
+            sumolib.checkBinary('sumo')
+        except Exception as e:
+            raise EnvironmentError(f"SUMO installation not found: {e}")
+            
+        # Verify input files exist
+        if not os.path.exists(sumo_config):
+            raise FileNotFoundError(f"SUMO configuration file not found: {sumo_config}")
+        if simpla_config and not os.path.exists(simpla_config):
+            raise FileNotFoundError(f"Simpla configuration file not found: {simpla_config}")
+            
         self.sumo_config = sumo_config
         self.simpla_config = simpla_config
         self.platoon_ids = platoon_ids
@@ -60,34 +75,47 @@ class PlatoonAnalyzer:
         # Create output directory if it doesn't exist
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
-    
-    def start_simulation(self, gui=False):
+
+
+    def start_simulation(self, gui=False, max_retries=3):
         """Start SUMO simulation with or without GUI."""
-        if gui:
-            sumo_binary = sumolib.checkBinary('sumo-gui')
-        else:
-            sumo_binary = sumolib.checkBinary('sumo')
-        
-        # Start SUMO with TraCI
-        traci.start([sumo_binary, "-c", self.sumo_config])
-        
-        # Load simpla if config is provided
-        if self.simpla_config:
-            # Import simpla dynamically after ensuring SUMO_HOME is set
-            try:
-                from simpla import SimplaException
-                # Load simpla configuration via TraCI
-                traci.addStepListener(None)  # Workaround for simpla initialization
-                traci.setOrder(1)  # Set TraCI priority
-                simpla_cfg_cmd = f"simpla.config {self.simpla_config}"
-                traci.execute(simpla_cfg_cmd)
-                print(f"Simpla loaded with config: {self.simpla_config}")
-            except (ImportError, SimplaException) as e:
-                print(f"Warning: Failed to load simpla: {e}")
-                print("Running without simpla support.")
-            
-        self.network = sumolib.net.readNet(traci.simulation.getParameter("", "net-file"))
-    
+        for attempt in range(max_retries):   
+            try: 
+                if gui:
+                    sumo_binary = sumolib.checkBinary('sumo-gui')
+                else:
+                    sumo_binary = sumolib.checkBinary('sumo')
+                
+                # Start SUMO with TraCI and simpla configuration
+                cmd = [sumo_binary, "-c", self.sumo_config, "--time-to-teleport", "300"]
+                if self.simpla_config:
+                    cmd.extend(["--additional-files", self.simpla_config])
+                
+                traci.start(cmd)
+                
+                # Load simpla if config is provided
+                if self.simpla_config:
+                    try:
+                        from simpla import SimplaException
+                        traci.setOrder(1)  # Set order for simpla
+                        print(f"Simpla loaded with config: {self.simpla_config}")
+                    except (ImportError, SimplaException) as e:
+                        print(f"Warning: Failed to load simpla: {e}")
+                        print("Running without simpla support.")
+                    
+                self.network = sumolib.net.readNet(traci.simulation.getParameter("", "net-file"))
+                return True
+                
+            except traci.exceptions.FatalTraCIError as e: 
+                print(f"Attempt {attempt + 1}/{max_retries} failed: {e}")
+                try:
+                    traci.close()
+                except:
+                    pass
+                if attempt == max_retries - 1:
+                    raise
+                time.sleep(2)  # Wait before retrying
+
     def is_platoon_vehicle(self, veh_id):
         """Check if a vehicle is part of the platoon."""
         if self.platoon_ids is not None:
@@ -111,25 +139,41 @@ class PlatoonAnalyzer:
     def collect_data(self):
         """Collect data during simulation."""
         step = 0
+        max_steps = 3600  # Maximum number of steps (1 hour at 1 step/second)
         
-        while traci.simulation.getMinExpectedNumber() > 0:
-            traci.simulationStep()
+        try:
+            while step < max_steps and traci.simulation.getMinExpectedNumber() > 0:
+                try:
+                    traci.simulationStep()
+                    
+                    # Get all vehicles in the simulation
+                    vehicles = traci.vehicle.getIDList()
+                    
+                    # Calculate global metrics
+                    self.calculate_global_metrics(vehicles, step)
+                    
+                    # Collect individual vehicle data
+                    for veh_id in vehicles:
+                        self.collect_vehicle_data(veh_id, step)
+                    
+                    # Calculate platoon-specific metrics
+                    self.calculate_platoon_metrics(vehicles, step)
+                    
+                    step += 1
+                    
+                except traci.exceptions.FatalTraCIError as e:
+                    print(f"TraCI connection lost at step {step}: {e}")
+                    break
+                    
+        except Exception as e:
+            print(f"Error during simulation at step {step}: {e}")
             
-            # Get all vehicles in the simulation
-            vehicles = traci.vehicle.getIDList()
-            
-            # Calculate global metrics
-            self.calculate_global_metrics(vehicles, step)
-            
-            # Collect individual vehicle data
-            for veh_id in vehicles:
-                self.collect_vehicle_data(veh_id, step)
-            
-            # Calculate platoon-specific metrics
-            self.calculate_platoon_metrics(vehicles, step)
-            
-            step += 1
-    
+        finally:
+            try:
+                self.close_simulation()
+            except:
+                pass
+
     def collect_vehicle_data(self, veh_id, step):
         """Collect data for a specific vehicle."""
         # Get simpla platoon parameters if available
@@ -410,28 +454,40 @@ class PlatoonAnalyzer:
     
     def run_analysis(self, gui=False):
         """Run the full analysis pipeline."""
-        print("Starting SUMO simulation...")
-        self.start_simulation(gui)
-        
-        print("Collecting simulation data...")
-        self.collect_data()
-        
-        print("Processing results...")
-        data = self.process_results()
-        
-        print("Generating plots...")
-        self.generate_plots(data)
-        
-        print("Summarizing metrics...")
-        summary = self.summarize_metrics(data)
-        
-        print("Analysis complete! Results saved to:", self.output_dir)
-        self.close_simulation()
-        
-        return data, summary
+        try:
+            print("Starting SUMO simulation...")
+            if not self.start_simulation(gui):
+                raise RuntimeError("Failed to start simulation after multiple attempts")
+            
+            print("Collecting simulation data...")
+            self.collect_data()
+            
+            if not self.vehicle_data:
+                raise RuntimeError("No data collected during simulation")
+            
+            print("Processing results...")
+            data = self.process_results()
+            
+            print("Generating plots...")
+            self.generate_plots(data)
+            
+            print("Summarizing metrics...")
+            summary = self.summarize_metrics(data)
+            
+            print("Analysis complete! Results saved to:", self.output_dir)
+            return data, summary
+            
+        except Exception as e:
+            print(f"Error during analysis: {e}")
+            return None, None
+        finally:
+            try:
+                self.close_simulation()
+            except:
+                pass
 
 
-def create_simpla_config(output_path="./scenarios/simpla.cfg"):
+def create_simpla_config(output_path="simpla.cfg"):
     """
     Create a configuration file for simpla platoon management.
     
@@ -441,18 +497,13 @@ def create_simpla_config(output_path="./scenarios/simpla.cfg"):
     Returns:
         str: Path to the created config file
     """
-    # Create directory if it doesn't exist
-    output_dir = os.path.dirname(output_path)
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-        
     # Simpla configuration XML
     simpla_config = """<?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <!-- SPD (Sublane-based Platooning for SUMO Driver) Configuration -->
     
     <!-- Platoon Attributes -->
-    <vehicleSelectors value="pkw"/>
+    <vehicleSelectors value="truck"/>  <!-- Only select trucks for platooning -->
     <maxVehicleLength value="12.0"/>
     <maxPlatoonGap value="10.0"/>
     <catchupHeadway value="2.0"/>
@@ -468,7 +519,6 @@ def create_simpla_config(output_path="./scenarios/simpla.cfg"):
     <lcMode value="597"/>
     <speedFactor value="1.0"/>
     <verbosity value="3"/>
-    <vTypeMap original="car" leader="platoon_leader" follower="platoon_follower"/>
     <vTypeMap original="truck" leader="truck_platoon_leader" follower="truck_platoon_follower"/>
 </configuration>"""
     
@@ -479,102 +529,93 @@ def create_simpla_config(output_path="./scenarios/simpla.cfg"):
     return output_path
 
 
-def generate_traffic_scenario(scenario_type, output_dir="./scenarios/", base_net="map.net.xml"):
+def generate_traffic_scenario(scenario_type, platoon_size=None, base_net="osm.net.xml"):
     """
     Generate different traffic scenarios for comparison using simpla.
     
     Args:
         scenario_type (str): One of 'platoon_only', 'light_traffic', 'heavy_traffic'
-        output_dir (str): Directory to save scenario files
+        platoon_size (int): Desired size of truck platoons. If None, default sizes are used
         base_net (str): Base network file
     
     Returns:
         str: Path to the generated scenario configuration file
     """
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    # Verify network file exists
+    if not os.path.exists(base_net):
+        raise FileNotFoundError(f"Network file not found: {base_net}")
+        
+    # Load network to get valid edges
+    try:
+        net = sumolib.net.readNet(base_net)
+        # Get main route edges (highway type)
+        main_edges = [edge.getID() for edge in net.getEdges() 
+                     if edge.getType() in ['highway.primary_link', 'highway.primary' , 'highway.secondary' , 'highway.secondary_link']]
+        if not main_edges:
+            raise ValueError("No valid highway edges found in network")
+    except Exception as e:
+        raise RuntimeError(f"Failed to load network: {e}")
     
     scenario_name = f"{scenario_type}_scenario"
-    routes_file = os.path.join(output_dir, f"{scenario_name}_routes.xml")
-    config_file = os.path.join(output_dir, f"{scenario_name}.sumocfg")
+    routes_file = f"{scenario_name}_routes.xml"
+    config_file = f"{scenario_name}.sumocfg"
     
     # Create simpla configuration
-    simpla_config = create_simpla_config(os.path.join(output_dir, "simpla.cfg"))
+    simpla_config = create_simpla_config("simpla.cfg")
+    
+    # Convert 50 MPH to m/s (22.352 m/s)
+    speed_limit = 22.352
     
     # Create route file with different settings based on scenario
     if scenario_type == "platoon_only":
         # Define vehicle types compatible with simpla
         with open(routes_file, 'w') as f:
-            f.write("""<routes>
-    <!-- Vehicle types for platoon -->
-    <vType id="pkw" accel="1.5" decel="4.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="30" color="0,0,1"/>
-    <vType id="platoon_leader" accel="1.5" decel="4.5" sigma="0.0" length="5" minGap="2" maxSpeed="30" color="1,0,0"/>
-    <vType id="platoon_follower" accel="1.5" decel="4.5" sigma="0.0" length="5" minGap="0.5" maxSpeed="30" color="0,1,0"/>
+            f.write(f"""<routes>
+    <!-- Vehicle types for truck platoons -->
+    <vType id="truck" accel="1.0" decel="3.0" sigma="0.5" length="10" minGap="3" maxSpeed="{speed_limit}" color="1,1,0"/>
+    <vType id="truck_platoon_leader" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="2" maxSpeed="{speed_limit}" color="0.8,0.4,0"/>
+    <vType id="truck_platoon_follower" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="0.5" maxSpeed="{speed_limit}" color="0.8,0.8,0"/>
     
-    <route id="main_route" edges="SOURCE MAIN DESTINATION"/>
-    
-    <!-- Create vehicles with the pkw type that simpla will convert to platoon types -->
-    <vehicle id="veh_0" type="pkw" route="main_route" depart="0" departLane="0" departSpeed="20"/>
-    <vehicle id="veh_1" type="pkw" route="main_route" depart="0" departLane="0" departSpeed="20" departPos="10"/>
-    <vehicle id="veh_2" type="pkw" route="main_route" depart="0" departLane="0" departSpeed="20" departPos="20"/>
-    <vehicle id="veh_3" type="pkw" route="main_route" depart="0" departLane="0" departSpeed="20" departPos="30"/>
-    <vehicle id="veh_4" type="pkw" route="main_route" depart="0" departLane="0" departSpeed="20" departPos="40"/>
+    <!-- Create truck platoons -->
+    <route id="main_route" edges="{' '.join(main_edges)}"/>
+    <flow id="truck_platoon" type="truck" route="main_route" begin="0" number="{platoon_size if platoon_size else 5}" departLane="0" departSpeed="{speed_limit}"/>
 </routes>""")
     
     elif scenario_type == "light_traffic":
-        # Create a platoon and some light background traffic
+        # Create truck platoons with light background traffic
         with open(routes_file, 'w') as f:
-            f.write("""<routes>
+            f.write(f"""<routes>
     <!-- Vehicle types -->
-    <vType id="pkw" accel="1.5" decel="4.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="30" color="0,0,1"/>
-    <vType id="car" accel="1.5" decel="4.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="30" color="0.5,0.5,0.5"/>
-    <vType id="platoon_leader" accel="1.5" decel="4.5" sigma="0.0" length="5" minGap="2" maxSpeed="30" color="1,0,0"/>
-    <vType id="platoon_follower" accel="1.5" decel="4.5" sigma="0.0" length="5" minGap="0.5" maxSpeed="30" color="0,1,0"/>
+    <vType id="truck" accel="1.0" decel="3.0" sigma="0.5" length="10" minGap="3" maxSpeed="{speed_limit}" color="1,1,0"/>
+    <vType id="car" accel="1.5" decel="4.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="{speed_limit}" color="0.5,0.5,0.5"/>
+    <vType id="truck_platoon_leader" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="2" maxSpeed="{speed_limit}" color="0.8,0.4,0"/>
+    <vType id="truck_platoon_follower" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="0.5" maxSpeed="{speed_limit}" color="0.8,0.8,0"/>
     
-    <route id="main_route" edges="SOURCE MAIN DESTINATION"/>
-    
-    <!-- Platoon vehicles -->
-    <vehicle id="veh_0" type="pkw" route="main_route" depart="0" departLane="0" departSpeed="20"/>
-    <vehicle id="veh_1" type="pkw" route="main_route" depart="0" departLane="0" departSpeed="20" departPos="10"/>
-    <vehicle id="veh_2" type="pkw" route="main_route" depart="0" departLane="0" departSpeed="20" departPos="20"/>
-    <vehicle id="veh_3" type="pkw" route="main_route" depart="0" departLane="0" departSpeed="20" departPos="30"/>
-    <vehicle id="veh_4" type="pkw" route="main_route" depart="0" departLane="0" departSpeed="20" departPos="40"/>
+    <!-- Truck platoons -->
+    <route id="main_route" edges="{' '.join(main_edges)}"/>
+    <flow id="truck_platoon" type="truck" route="main_route" begin="0" number="{platoon_size if platoon_size else 5}" departLane="0" departSpeed="{speed_limit}"/>
     
     <!-- Light traffic: 300 vehicles/hour (1 every 12 seconds) -->
     <flow id="light_flow" type="car" route="main_route" begin="10" end="3600" period="12" departLane="random" departSpeed="max"/>
 </routes>""")
     
     elif scenario_type == "heavy_traffic":
-        # Create a platoon amidst heavy background traffic
+        # Create truck platoons amidst heavy background traffic
         with open(routes_file, 'w') as f:
-            f.write("""<routes>
+            f.write(f"""<routes>
     <!-- Vehicle types -->
-    <vType id="pkw" accel="1.5" decel="4.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="30" color="0,0,1"/>
-    <vType id="car" accel="1.5" decel="4.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="30" color="0.5,0.5,0.5"/>
-    <vType id="truck" accel="1.0" decel="3.0" sigma="0.5" length="10" minGap="3" maxSpeed="25" color="1,1,0"/>
-    <vType id="platoon_leader" accel="1.5" decel="4.5" sigma="0.0" length="5" minGap="2" maxSpeed="30" color="1,0,0"/>
-    <vType id="platoon_follower" accel="1.5" decel="4.5" sigma="0.0" length="5" minGap="0.5" maxSpeed="30" color="0,1,0"/>
-    <vType id="truck_platoon_leader" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="2" maxSpeed="25" color="0.8,0.4,0"/>
-    <vType id="truck_platoon_follower" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="0.5" maxSpeed="25" color="0.8,0.8,0"/>
+    <vType id="truck" accel="1.0" decel="3.0" sigma="0.5" length="10" minGap="3" maxSpeed="{speed_limit}" color="1,1,0"/>
+    <vType id="car" accel="1.5" decel="4.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="{speed_limit}" color="0.5,0.5,0.5"/>
+    <vType id="truck_platoon_leader" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="2" maxSpeed="{speed_limit}" color="0.8,0.4,0"/>
+    <vType id="truck_platoon_follower" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="0.5" maxSpeed="{speed_limit}" color="0.8,0.8,0"/>
     
-    <route id="main_route" edges="SOURCE MAIN DESTINATION"/>
-    <route id="alt_route1" edges="ALT1_SOURCE ALT1_MAIN DESTINATION"/>
-    <route id="alt_route2" edges="SOURCE ALT2_MAIN ALT2_DESTINATION"/>
-    
-    <!-- Platoon vehicles -->
-    <vehicle id="veh_0" type="pkw" route="main_route" depart="0" departLane="0" departSpeed="20"/>
-    <vehicle id="veh_1" type="pkw" route="main_route" depart="0" departLane="0" departSpeed="20" departPos="10"/>
-    <vehicle id="veh_2" type="pkw" route="main_route" depart="0" departLane="0" departSpeed="20" departPos="20"/>
-    <vehicle id="veh_3" type="pkw" route="main_route" depart="0" departLane="0" departSpeed="20" departPos="30"/>
-    <vehicle id="veh_4" type="pkw" route="main_route" depart="0" departLane="0" departSpeed="20" departPos="40"/>
+    <!-- Truck platoons -->
+    <route id="main_route" edges="{' '.join(main_edges)}"/>
+    <flow id="truck_platoon" type="truck" route="main_route" begin="0" number="{platoon_size if platoon_size else 5}" departLane="0" departSpeed="{speed_limit}"/>
     
     <!-- Heavy traffic: 1800 vehicles/hour (1 every 2 seconds) -->
-    <flow id="heavy_flow_cars" type="car" route="main_route" begin="10" end="3600" period="4" departLane="random" departSpeed="max"/>
+    <flow id="heavy_flow_cars" type="car" route="main_route" begin="10" end="3600" period="2" departLane="random" departSpeed="max"/>
     <flow id="heavy_flow_trucks" type="truck" route="main_route" begin="10" end="3600" period="12" departLane="random" departSpeed="max"/>
-    
-    <!-- Additional traffic on alternate routes -->
-    <flow id="alt_flow1" type="car" route="alt_route1" begin="10" end="3600" period="10" departLane="random" departSpeed="max"/>
-    <flow id="alt_flow2" type="car" route="alt_route2" begin="10" end="3600" period="10" departLane="random" departSpeed="max"/>
 </routes>""")
     
     # Create config file that includes simpla
@@ -584,6 +625,7 @@ def generate_traffic_scenario(scenario_type, output_dir="./scenarios/", base_net
     <input>
         <net-file value="{base_net}"/>
         <route-files value="{routes_file}"/>
+        <additional-files value="osm.poly.xml.gz"/>
     </input>
     <time>
         <begin value="0"/>
@@ -608,23 +650,51 @@ def generate_traffic_scenario(scenario_type, output_dir="./scenarios/", base_net
 
 
 if __name__ == "__main__":
-    #Replace the file paths 
-    analyzer = PlatoonAnalyzer(
-        sumo_config="scenarios/platoon_only_scenario.sumocfg",
-        simpla_config="scenarios/simpla.cfg",
-        output_dir="results/"
-    )
-    
-    # Generate different traffic scenarios
-    scenarios = ["platoon_only", "light_traffic", "heavy_traffic"]
-    for scenario in scenarios:
-        print(f"\nGenerating {scenario} scenario...")
-        config_file = generate_traffic_scenario(scenario)
-        print(f"Scenario configuration saved to: {config_file}")
+    try:
+        # Get user input for platoon size
+        while True:
+            try:
+                platoon_size = input("Enter desired platoon size (3-10) or press Enter for default (5): ")
+                if not platoon_size:
+                    platoon_size = None
+                    break
+                platoon_size = int(platoon_size)
+                if 3 <= platoon_size <= 10:
+                    break
+                print("Please enter a number between 3 and 10")
+            except ValueError:
+                print("Please enter a valid number")
         
-        # Run analysis for each scenario
-        analyzer.sumo_config = config_file
-        data, summary = analyzer.run_analysis(gui=False)
-        print(f"\nSummary for {scenario} scenario:")
-        for metric, value in summary.items():
-            print(f"{metric}: {value:.4f}") 
+        # Initialize analyzer
+        analyzer = PlatoonAnalyzer(
+            sumo_config="platoon_only_scenario.sumocfg",
+            simpla_config="simpla.cfg",
+            output_dir="results/"
+        )
+        
+        # Generate different traffic scenarios
+        scenarios = ["platoon_only", "light_traffic", "heavy_traffic"]
+        for scenario in scenarios:
+            print(f"\nGenerating {scenario} scenario...")
+            try:
+                config_file = generate_traffic_scenario(
+                    scenario,
+                    platoon_size=platoon_size,
+                    base_net="osm.net.xml"
+                )
+                print(f"Scenario configuration saved to: {config_file}")
+                
+                # Run analysis for each scenario
+                analyzer.sumo_config = config_file
+                data, summary = analyzer.run_analysis(gui=True)  # Enable GUI for visualization
+                print(f"\nSummary for {scenario} scenario:")
+                for metric, value in summary.items():
+                    print(f"{metric}: {value:.4f}")
+            except Exception as e:
+                print(f"Error in {scenario} scenario: {e}")
+                continue
+                
+    except Exception as e:
+        print(f"Fatal error: {e}")
+        sys.exit(1) 
+
