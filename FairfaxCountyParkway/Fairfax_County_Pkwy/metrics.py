@@ -95,7 +95,7 @@ class TrafficAnalyzer:
                 raise
             
             try:
-                net_file = 'osm.net.xml'
+                net_file = 'osm_files/osm.net.xml'
                 print(f"Network file from simulation: {net_file}")
                 self.network = sumolib.net.readNet(net_file)
                 print("Network loaded successfully")
@@ -338,7 +338,7 @@ if __name__ == "__main__":
             sys.exit(1)
             
         # Check if config file exists
-        config_file = "osm.sumocfg"
+        config_file = "osm_files/osm.sumocfg"
         if not os.path.exists(config_file):
             print(f"Error: Configuration file not found: {config_file}")
             print("Please make sure the file exists in the current directory")
