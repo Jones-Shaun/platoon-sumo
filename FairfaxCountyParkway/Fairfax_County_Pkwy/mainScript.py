@@ -561,7 +561,7 @@ def generate_traffic_scenario(scenario_type, platoon_size=None, base_net="osm.ne
     config_file = f"{scenario_name}.sumocfg"
     
     # Create simpla configuration
-    simpla_config = create_simpla_config("simpla.cfg")
+    simpla_config = create_simpla_config("generated_configs/simpla/simpla.cfg")
     
     # Convert 50 MPH to m/s (22.352 m/s)
     speed_limit = 22.352
@@ -667,8 +667,8 @@ if __name__ == "__main__":
         
         # Initialize analyzer
         analyzer = PlatoonAnalyzer(
-            sumo_config="platoon_only_scenario.sumocfg",
-            simpla_config="simpla.cfg",
+            sumo_config="generated_configs/traffic/platoon_only_scenario.sumocfg",
+            simpla_config="generated_configs/simpla/simpla.cfg",
             output_dir="results/"
         )
         
@@ -680,7 +680,7 @@ if __name__ == "__main__":
                 config_file = generate_traffic_scenario(
                     scenario,
                     platoon_size=platoon_size,
-                    base_net="osm.net.xml"
+                    base_net="osm_files/osm.net.xml"
                 )
                 print(f"Scenario configuration saved to: {config_file}")
                 
