@@ -73,9 +73,10 @@ class PlatoonGenerator:
         }
 
         scenario_name = f"{self.scenario_type}_scenario"
-        routes_file = self.generated_path / "traffic" / f"{scenario_name}_routes.xml"
-        config_file = self.generated_path / "traffic" / f"{scenario_name}.sumocfg"
-
+        traffic_dir = self.generated_path / "traffic"
+        traffic_dir.mkdir(parents=True, exist_ok=True)
+        routes_file = traffic_dir / f"{scenario_name}_routes.xml"
+        config_file = traffic_dir / f"{scenario_name}.sumocfg"
         # Convert 50 MPH to m/s (22.352 m/s)
 
         # Create route file with different settings based on scenario

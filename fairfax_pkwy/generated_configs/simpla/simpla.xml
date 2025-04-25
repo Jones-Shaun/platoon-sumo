@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+    <configuration>
+        <!-- SPD (Sublane-based Platooning for SUMO Driver) Configuration -->
+
+        <!-- Platoon Attributes -->
+        <vehicleSelectors value="truck"/>  <!-- Only select trucks for platooning -->
+        <maxVehicleLength value="12.0"/>
+        <maxPlatoonGap value="10.0"/>
+        <catchupHeadway value="2.0"/>
+        <platoonSplitTime value="3.0"/>
+
+        <!-- Platoon Management -->
+        <managedLanes value=""/>
+        <mingap value="0.5"/>
+        <catchupSpeed value="0.15"/>  <!-- % of driving speed -->
+        <switchImpatienceFactor value="1.0"/>
+
+        <!-- Platoon Operation -->
+        <lcMode value="597"/>
+        <speedFactor value="1.0"/>
+        <verbosity value="3"/>
+        <vTypeMap original="truck" leader="truck_platoon_leader" follower="truck_platoon_follower"/>
+    </configuration>
