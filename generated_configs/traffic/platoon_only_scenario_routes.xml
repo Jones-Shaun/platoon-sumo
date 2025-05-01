@@ -6,5 +6,5 @@
     
     <!-- Create truck platoons -->
     <route id="main_route" edges="228470926 1318032192 1318032193 1318032191#0 228463837 173228852"/>
-    <flow id="truck_platoon" type="truck" route="main_route" begin="0" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon" type="truck" route="main_route" begin="0" number="5" departLane="0" departSpeed="22.352" period="1"/>
 </routes>
