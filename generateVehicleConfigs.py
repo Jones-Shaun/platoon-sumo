@@ -1,11 +1,8 @@
 """
-SUMO Platoon Analysis Script with Simpla Integration
----------------------------------------------------
-This script integrates SUMO's simpla tool for platooning and calculates:
-- Vehicular density
-- Traffic flow
-- Headway consistency within platoons
-- Fuel/energy efficiency
+This script generates different traffic scenarios for SUMO using the SUMO Traffic Simulation Framework.
+It creates a configuration file for each scenario type (platoon_only, light_traffic, heavy_traffic) and
+saves them in the specified directory.
+It also generates a simpla.xml file for platoon analysis using the SUMO Traffic Simulation Framework.
 """
 import dataclasses
 import os
@@ -17,13 +14,17 @@ from pathlib import Path, PurePath
 
 @dataclasses.dataclass
 class PlatoonGenerator:
-    """Class for performing platoon analysis."""
+    """
+    Class to generate different traffic scenarios for SUMO using the SUMO Traffic Simulation Framework.
+    It creates a traffic demand configuration file for each scenario type (platoon_only, light_traffic, heavy_traffic) and
+    a simpla.xml file for platooning.
+    """
     simpla_path: PurePath = Path.cwd() / "generated_configs" / "simpla"
 
     target_dir = Path.cwd()
     generated_path = Path.cwd() / "generated_configs"
     target_dir.mkdir(parents=True, exist_ok=True)
-    base_path = Path.cwd() / "osm_files"
+    base_path = Path.cwd() / "osm"
     base_net: str = "osm.net.xml"
     base_config: str = "osm.sumocfg"
     output_dir: str = "platoon_analysis"
@@ -35,7 +36,7 @@ class PlatoonGenerator:
     SIMPLA_CONFIG = """<?xml version="1.0" encoding="UTF-8"?>\n    <configuration>\n        <!-- SPD (Sublane-based Platooning for SUMO Driver) Configuration -->\n\n        <!-- Platoon Attributes -->\n        <vehicleSelectors value="truck"/>  <!-- Only select trucks for platooning -->\n        <maxVehicleLength value="12.0"/>\n        <maxPlatoonGap value="10.0"/>\n        <catchupHeadway value="2.0"/>\n        <platoonSplitTime value="3.0"/>\n\n        <!-- Platoon Management -->\n        <managedLanes value=""/>\n        <mingap value="0.5"/>\n        <catchupSpeed value="0.15"/>  <!-- % of driving speed -->\n        <switchImpatienceFactor value="1.0"/>\n\n        <!-- Platoon Operation -->\n        <lcMode value="597"/>\n        <speedFactor value="1.0"/>\n        <verbosity value="3"/>\n        <vTypeMap original="truck" leader="truck_platoon_leader" follower="truck_platoon_follower"/>\n    </configuration>"""
     route_files: dict = None
 
-    def generate_traffic_scenario(self, base_net=Path.cwd() / "osm_files" / "osm.net.xml"):
+    def generate_traffic_scenario(self, base_net=Path.cwd() / "osm" / "osm.net.xml"):
         """
         Generate different traffic scenarios for comparison using simpla.
 
@@ -52,22 +53,33 @@ class PlatoonGenerator:
             raise FileNotFoundError(f"Network file not found: {base_net}")
 
         # Load network to get valid edges
-        try:
-            net = sumolib.net.readNet(base_net)
-            # Get main route edges (highway type)
-            main_edges = [edge.getID() for edge in net.getEdges()
-                          if edge.getType() in ['highway.primary_link', 'highway.primary', 'highway.secondary',
-                                                'highway.secondary_link']]
-            if not main_edges:
-                raise ValueError("No valid highway edges found in network")
-        except Exception as e:
-            raise RuntimeError(f"Failed to load network: {e}")
+        # try:
+        #     net = sumolib.net.readNet(base_net)
+        #     # Get main route edges (highway type)
+        #     main_edges = [edge.getID() for edge in net.getEdges()
+        #                   if edge.getType() in ['highway.primary_link', 'highway.primary', 'highway.secondary',
+        #                                         'highway.secondary_link']]
+        #     if not main_edges:
+        #         raise ValueError("No valid highway edges found in network")
+        # except Exception as e:
+        #     raise RuntimeError(f"Failed to load network: {e}")
+        
+        # Define the main route to be the northbound fairfax county parkway edges
+        main_edges = [
+            "228470926",  # First
+            "1318032192", # Second
+            "1318032193", # Third
+            "1318032191#0", # Fourth
+            "228463837", # Fifth
+            "173228852"   # Last
+        ]
+            
 
         speed_limit = 22.352
 
 
         self.route_files = {
-            'platoon_only': f'<routes>\n    <!-- Vehicle types for truck platoons -->\n    <vType id="truck" accel="1.0" decel="3.0" sigma="0.5" length="10" minGap="3" maxSpeed="{speed_limit}" color="1,1,0"/>\n    <vType id="truck_platoon_leader" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="2" maxSpeed="{speed_limit}" color="0.8,0.4,0"/>\n    <vType id="truck_platoon_follower" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="0.5" maxSpeed="{speed_limit}" color="0.8,0.8,0"/>\n    \n    <!-- Create truck platoons -->\n    <route id="main_route" edges="{' '.join(main_edges)}"/>\n    <flow id="truck_platoon" type="truck" route="main_route" begin="0" number="{platoon_size if platoon_size else 5}" departLane="0" departSpeed="{speed_limit}"/>\n</routes>',
+            'platoon_only': f'<routes>\n    <!-- Vehicle types for truck platoons -->\n    <vType id="truck" accel="1.0" decel="3.0" sigma="0.5" length="10" minGap="3" maxSpeed="{speed_limit}" color="1,1,0"/>\n    <vType id="truck_platoon_leader" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="2" maxSpeed="{speed_limit}" color="0.8,0.4,0"/>\n    <vType id="truck_platoon_follower" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="0.5" maxSpeed="{speed_limit}" color="0.8,0.8,0"/>\n    \n    <!-- Create truck platoons -->\n    <route id="main_route" edges="{' '.join(main_edges)}"/>\n    <flow id="truck_platoon" type="truck" route="main_route" begin="0" number="{platoon_size if platoon_size else 5}" departLane="0" departSpeed="{speed_limit}" period="1"/>\n</routes>',
             'light_traffic': f'<routes>\n    <!-- Vehicle types -->\n    <vType id="truck" accel="1.0" decel="3.0" sigma="0.5" length="10" minGap="3" maxSpeed="{speed_limit}" color="1,1,0"/>\n    <vType id="car" accel="1.5" decel="4.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="{speed_limit}" color="0.5,0.5,0.5"/>\n    <vType id="truck_platoon_leader" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="2" maxSpeed="{speed_limit}" color="0.8,0.4,0"/>\n    <vType id="truck_platoon_follower" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="0.5" maxSpeed="{speed_limit}" color="0.8,0.8,0"/>\n    \n    <!-- Truck platoons -->\n    <route id="main_route" edges="{' '.join(main_edges)}"/>\n    <flow id="truck_platoon" type="truck" route="main_route" begin="0" number="{platoon_size if platoon_size else 5}" departLane="0" departSpeed="{speed_limit}"/>\n    \n    <!-- Light traffic: 300 vehicles/hour (1 every 12 seconds) -->\n    <flow id="light_flow" type="car" route="main_route" begin="10" end="3600" period="12" departLane="random" departSpeed="max"/>\n</routes>',
             'heavy_traffic': f'<routes>\n    <!-- Vehicle types -->\n    <vType id="truck" accel="1.0" decel="3.0" sigma="0.5" length="10" minGap="3" maxSpeed="{speed_limit}" color="1,1,0"/>\n    <vType id="car" accel="1.5" decel="4.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="{speed_limit}" color="0.5,0.5,0.5"/>\n    <vType id="truck_platoon_leader" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="2" maxSpeed="{speed_limit}" color="0.8,0.4,0"/>\n    <vType id="truck_platoon_follower" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="0.5" maxSpeed="{speed_limit}" color="0.8,0.8,0"/>\n    \n    <!-- Truck platoons -->\n    <route id="main_route" edges="{' '.join(main_edges)}"/>\n    <flow id="truck_platoon" type="truck" route="main_route" begin="0" number="{platoon_size if platoon_size else 5}" departLane="0" departSpeed="{speed_limit}"/>\n    \n    <!-- Heavy traffic: 1800 vehicles/hour (1 every 2 seconds) -->\n    <flow id="heavy_flow_cars" type="car" route="main_route" begin="10" end="3600" period="2" departLane="random" departSpeed="max"/>\n    <flow id="heavy_flow_trucks" type="truck" route="main_route" begin="10" end="3600" period="12" departLane="random" departSpeed="max"/>\n</routes>',
         }
@@ -88,8 +100,9 @@ class PlatoonGenerator:
         # Create config file that includes simpla
         with open(config_file, 'w') as f:
             f.write(
-                f'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n    <configuration>\n        <input>\n            <net-file value=\"{base_net}\"/>\n            <route-files value=\"{routes_file}\"/>\n            <additional-files value=\"osm.poly.xml.gz\"/>\n        </input>\n        <time>\n            <begin value=\"0\"/>\n            <end value=\"3600\"/>\n        </time>\n        <processing>\n            <lateral-resolution value=\"0.13\"/>\n        </processing>\n        <report>\n            <verbose value=\"true\"/>\n            <no-step-log value=\"true\"/>\n        </report>\n        <gui_only>\n            <start value=\"true\"/>\n        </gui_only>\n        <random_number>\n            <seed value=\"23423\"/>\n        </random_number>\n    </configuration>')
+                f'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n    <configuration>\n        <input>\n            <net-file value=\"{base_net}\"/>\n            <route-files value=\"{routes_file}\"/>\n            <additional-files value=\"{Path.cwd() / "osm" /"osm.poly.xml.gz"} \"/>\n        </input>\n        <time>\n            <begin value=\"0\"/>\n            <end value=\"3600\"/>\n        </time>\n        <processing>\n            <lateral-resolution value=\"0.13\"/>\n        </processing>\n        <report>\n            <verbose value=\"true\"/>\n            <no-step-log value=\"true\"/>\n        </report>\n        <gui_only>\n            <start value=\"true\"/>\n        </gui_only>\n        <random_number>\n            <seed value=\"23423\"/>\n        </random_number>\n    </configuration>')
 
+        self.simpla_path.mkdir(parents=True, exist_ok=True)  # Ensure the directory exists
         with open(self.simpla_path / "simpla.xml", 'w') as f:
             f.write(self.SIMPLA_CONFIG)
         return self.generated_path

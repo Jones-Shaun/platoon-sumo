@@ -1,1 +1,0 @@
-sumo-gui -c osm_files/osm.sumocfg
