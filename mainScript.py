@@ -36,11 +36,9 @@ southbound_edges = [
 
 def run_simulation():
     # Start SUMO simulation
-    sumo_binary = "sumo-gui"  # Use "sumo-gui" for gui mode
-    # sumo_config = os.path.join(os.getcwd(), "generated_configs", "traffic", "platoon_only_scenario.sumocfg")
-    # sumo_config = os.path.join(os.getcwd(), "generated_configs", "traffic", "light_traffic_scenario.sumocfg")
-    sumo_config = os.path.join(os.getcwd(), "generated_configs", "traffic", "heavy_traffic_scenario.sumocfg")
-    simpla_config = os.path.join(os.getcwd(), "generated_configs", "simpla", "simpla.xml")
+    sumo_binary = ask_gui()  # Get the GUI option from the user 
+    sumo_config = ask_scenario()  # Get the scenario from the user
+    simpla_config = os.path.join(os.getcwd(), "generated_configs", "simpla", "simpla.xml") # Path to the Simpla configuration file
 
     # Ensure the required files exist
     if not os.path.exists(sumo_config):
@@ -139,6 +137,7 @@ def run_simulation():
             
             # Collect data points (Metrics)
             metrics = {
+                "step": step,
                 "num_vehicles": num_vehicles,
                 "avg_intervehicular_distance": avg_intervehicular_distance,
                 "northbound_flow": northbound_flow,
@@ -171,7 +170,42 @@ def run_simulation():
 
     finally:
         traci.close()  # Ensure SUMO closes properly
+      
+def ask_scenario():
+    while True:
+        # Ask the user which scenario they'd like to run
+        print("Select a traffic scenario to run:")
+        print("1. Platoon Only Scenario")
+        print("2. Light Traffic Scenario")
+        print("3. Heavy Traffic Scenario")
+
+        scenario_choice = input("Enter the number corresponding to your choice (1/2/3): ").strip()
+
+        if scenario_choice == "1":
+            sumo_config = os.path.join(os.getcwd(), "generated_configs", "traffic", "platoon_only_scenario.sumocfg")
+            break
+        elif scenario_choice == "2":
+            sumo_config = os.path.join(os.getcwd(), "generated_configs", "traffic", "light_traffic_scenario.sumocfg")
+            break
+        elif scenario_choice == "3":
+            sumo_config = os.path.join(os.getcwd(), "generated_configs", "traffic", "heavy_traffic_scenario.sumocfg")
+            break
+        else:
+            print("Invalid choice. Please select 1, 2, or 3.")
+    
+    return sumo_config
+
+def ask_gui():
+    while True:
+        # Ask the user if they want to run the simulation in GUI mode
+        gui_choice = input("Do you want to run the simulation in GUI mode? (y/n): ").strip().lower()
         
+        if gui_choice == "y":
+            return "sumo-gui"
+        elif gui_choice == "n":
+            return "sumo"
+        else:
+            print("Invalid choice. Please enter 'y' or 'n'.")
     
 if __name__ == "__main__":
     run_simulation()
