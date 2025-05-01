@@ -35,7 +35,7 @@ southbound_edges = [
 
 def run_simulation():
     # Start SUMO simulation
-    sumo_binary = "sumo"  # Use "sumo-gui" for gui mode
+    sumo_binary = "sumo-gui"  # Use "sumo-gui" for gui mode
     sumo_config = os.path.join(os.getcwd(), "generated_configs", "traffic", "platoon_only_scenario.sumocfg")
     # sumo_config = os.path.join(os.getcwd(), "generated_configs", "traffic", "light_traffic_scenario.sumocfg")
     # sumo_config = os.path.join(os.getcwd(), "generated_configs", "traffic", "heavy_traffic_scenario.sumocfg")
@@ -76,25 +76,29 @@ def run_simulation():
             total_distance = 0
             distance_count = 0
 
+            all_vehicle_positions = []
+
             for edge in northbound_edges:
-                num_lanes = traci.edge.getLaneNumber(edge)  # Get lane IDs of the edge
+                num_lanes = traci.edge.getLaneNumber(edge)  # Get number of lanes for the edge
                 for i in range(num_lanes):
                     lane_id = f"{edge}_{i}"  # Get lane ID
                     vehicle_ids = traci.lane.getLastStepVehicleIDs(lane_id)
 
                     # Get positions of vehicles on this lane
                     vehicle_positions = [traci.vehicle.getLanePosition(veh_id) for veh_id in vehicle_ids]
+                    all_vehicle_positions.extend(vehicle_positions)
 
-                    # Sort by position from downstream (0) to upstream (laneLength)
-                    vehicle_positions.sort(reverse=True)
+            # Sort all vehicle positions across all lanes from downstream (0) to upstream (laneLength)
+            all_vehicle_positions.sort(reverse=True)
 
-                    # Compute inter-vehicle distances
-                    for j in range(len(vehicle_positions) - 1):
-                        dist = vehicle_positions[j] - vehicle_positions[j + 1]
-                        total_distance += dist
-                        distance_count += 1
+            # Compute inter-vehicle distances
+            for j in range(len(all_vehicle_positions) - 1):
+                dist = all_vehicle_positions[j] - all_vehicle_positions[j + 1]
+                total_distance += dist
+                distance_count += 1
 
-            # Compute average
+            # Compute average inter-vehicle distance
+            # Note: This is the average distance between vehicles on the same lane
             if distance_count > 0:
                 avg_intervehicular_distance = total_distance / distance_count
             else:
