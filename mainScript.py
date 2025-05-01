@@ -156,11 +156,15 @@ def run_simulation():
                 output_file = "simulation_metrics.csv"
                 
                 # Overwrite the file on the first step
-                mode = "w" if step == 10 else "a"
+                mode = "w" if step == 5 else "a"
                 
                 with open(output_file, mode=mode, newline="") as csv_file:
                     fieldnames = metrics.keys()
                     writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+                    
+                    # Write the header only when creating a new file
+                    if step == 5:
+                        writer.writeheader()
                     
                     # Write the metrics for the current step
                     writer.writerow(metrics)
