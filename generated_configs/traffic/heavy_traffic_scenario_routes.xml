@@ -5,8 +5,11 @@
     <vType id="truck_platoon_leader" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="2" maxSpeed="22.352" color="0.8,0.4,0"/>
     <vType id="truck_platoon_follower" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="0.5" maxSpeed="22.352" color="0.8,0.8,0"/>
     
-    <!-- Truck platoons -->
     <route id="main_route" edges="228470926 1318032192 1318032193 1318032191#0 228463837 173228852"/>
+    <route id="northbound_route" edges="228470926 1318032192 1318032193 1318032191#0 228463837 173228852"/>
+    <route id="southbound_route" edges="116044310#0 173228850#0 173228850#0-AddedOffRampEdge 173228850#1 228463846#2"/>
+    
+    <!-- Truck platoons -->
     <flow id="truck_platoon" type="truck" route="main_route" begin="0" number="5" departLane="0" departSpeed="22.352" period="1"/>
     
     <!-- Heavy traffic: 1800 vehicles/hour (1 every 2 seconds) -->

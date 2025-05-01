@@ -65,7 +65,7 @@ class PlatoonGenerator:
         #     raise RuntimeError(f"Failed to load network: {e}")
         
         # Define the main route to be the northbound fairfax county parkway edges
-        main_edges = [
+        northbound_edges = [
             "228470926",  # First
             "1318032192", # Second
             "1318032193", # Third
@@ -73,15 +73,28 @@ class PlatoonGenerator:
             "228463837", # Fifth
             "173228852"   # Last
         ]
-            
+        
+        southbound_edges = [
+            "116044310#0",  # First
+            "173228850#0", # Second
+            "173228850#0-AddedOffRampEdge", # Third
+            "173228850#1", # Fourth
+            "228463846#2", # Last
+        ]
+        
+        eastbound_edges = [
+        ]
+        
+        westbound_edges = [
+        ]
 
         speed_limit = 22.352
 
 
         self.route_files = {
-            'platoon_only': f'<routes>\n    <!-- Vehicle types for truck platoons -->\n    <vType id="truck" accel="1.0" decel="3.0" sigma="0.5" length="10" minGap="3" maxSpeed="{speed_limit}" color="1,1,0"/>\n    <vType id="truck_platoon_leader" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="2" maxSpeed="{speed_limit}" color="0.8,0.4,0"/>\n    <vType id="truck_platoon_follower" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="0.5" maxSpeed="{speed_limit}" color="0.8,0.8,0"/>\n    \n    <!-- Create truck platoons -->\n    <route id="main_route" edges="{' '.join(main_edges)}"/>\n    <flow id="truck_platoon" type="truck" route="main_route" begin="0" number="{platoon_size if platoon_size else 5}" departLane="0" departSpeed="{speed_limit}" period="1"/>\n</routes>',
-            'light_traffic': f'<routes>\n    <!-- Vehicle types -->\n    <vType id="truck" accel="1.0" decel="3.0" sigma="0.5" length="10" minGap="3" maxSpeed="{speed_limit}" color="1,1,0"/>\n    <vType id="car" accel="1.5" decel="4.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="{speed_limit}" color="0.5,0.5,0.5"/>\n    <vType id="truck_platoon_leader" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="2" maxSpeed="{speed_limit}" color="0.8,0.4,0"/>\n    <vType id="truck_platoon_follower" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="0.5" maxSpeed="{speed_limit}" color="0.8,0.8,0"/>\n    \n    <!-- Truck platoons -->\n    <route id="main_route" edges="{' '.join(main_edges)}"/>\n    <flow id="truck_platoon" type="truck" route="main_route" begin="0" number="{platoon_size if platoon_size else 5}" departLane="0" departSpeed="{speed_limit}" period="1"/>\n    \n    <!-- Light traffic: 300 vehicles/hour (1 every 12 seconds) -->\n    <flow id="light_flow" type="car" route="main_route" begin="10" end="3600" period="12" departLane="random" departSpeed="max"/>\n</routes>',
-            'heavy_traffic': f'<routes>\n    <!-- Vehicle types -->\n    <vType id="truck" accel="1.0" decel="3.0" sigma="0.5" length="10" minGap="3" maxSpeed="{speed_limit}" color="1,1,0"/>\n    <vType id="car" accel="1.5" decel="4.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="{speed_limit}" color="0.5,0.5,0.5"/>\n    <vType id="truck_platoon_leader" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="2" maxSpeed="{speed_limit}" color="0.8,0.4,0"/>\n    <vType id="truck_platoon_follower" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="0.5" maxSpeed="{speed_limit}" color="0.8,0.8,0"/>\n    \n    <!-- Truck platoons -->\n    <route id="main_route" edges="{' '.join(main_edges)}"/>\n    <flow id="truck_platoon" type="truck" route="main_route" begin="0" number="{platoon_size if platoon_size else 5}" departLane="0" departSpeed="{speed_limit}" period="1"/>\n    \n    <!-- Heavy traffic: 1800 vehicles/hour (1 every 2 seconds) -->\n    <flow id="heavy_flow_cars" type="car" route="main_route" begin="10" end="3600" period="2" departLane="random" departSpeed="max"/>\n</routes>'
+            'platoon_only': f'<routes>\n    <!-- Vehicle types for truck platoons -->\n    <vType id="truck" accel="1.0" decel="3.0" sigma="0.5" length="10" minGap="3" maxSpeed="{speed_limit}" color="1,1,0"/>\n    <vType id="truck_platoon_leader" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="2" maxSpeed="{speed_limit}" color="0.8,0.4,0"/>\n    <vType id="truck_platoon_follower" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="0.5" maxSpeed="{speed_limit}" color="0.8,0.8,0"/>\n    \n    <!-- Create truck platoons -->\n    <route id="main_route" edges="{' '.join(northbound_edges)}"/>\n    <flow id="truck_platoon" type="truck" route="main_route" begin="0" number="{platoon_size if platoon_size else 5}" departLane="0" departSpeed="{speed_limit}" period="1"/>\n</routes>',
+            'light_traffic': f'<routes>\n    <!-- Vehicle types -->\n    <vType id="truck" accel="1.0" decel="3.0" sigma="0.5" length="10" minGap="3" maxSpeed="{speed_limit}" color="1,1,0"/>\n    <vType id="car" accel="1.5" decel="4.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="{speed_limit}" color="0.5,0.5,0.5"/>\n    <vType id="truck_platoon_leader" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="2" maxSpeed="{speed_limit}" color="0.8,0.4,0"/>\n    <vType id="truck_platoon_follower" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="0.5" maxSpeed="{speed_limit}" color="0.8,0.8,0"/>\n    \n    <!-- Truck platoons -->\n    <route id="main_route" edges="{' '.join(northbound_edges)}"/>\n    <flow id="truck_platoon" type="truck" route="main_route" begin="0" number="{platoon_size if platoon_size else 5}" departLane="0" departSpeed="{speed_limit}" period="1"/>\n    \n    <!-- Light traffic: 300 vehicles/hour (1 every 12 seconds) -->\n    <flow id="light_flow" type="car" route="main_route" begin="10" end="3600" period="12" departLane="random" departSpeed="max"/>\n</routes>',
+            'heavy_traffic': f'<routes>\n    <!-- Vehicle types -->\n    <vType id="truck" accel="1.0" decel="3.0" sigma="0.5" length="10" minGap="3" maxSpeed="{speed_limit}" color="1,1,0"/>\n    <vType id="car" accel="1.5" decel="4.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="{speed_limit}" color="0.5,0.5,0.5"/>\n    <vType id="truck_platoon_leader" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="2" maxSpeed="{speed_limit}" color="0.8,0.4,0"/>\n    <vType id="truck_platoon_follower" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="0.5" maxSpeed="{speed_limit}" color="0.8,0.8,0"/>\n    \n    <!-- Truck platoons -->\n    <route id="main_route" edges="{' '.join(northbound_edges)}"/>\n    <flow id="truck_platoon" type="truck" route="main_route" begin="0" number="{platoon_size if platoon_size else 5}" departLane="0" departSpeed="{speed_limit}" period="1"/>\n    \n    <!-- Heavy traffic: 1800 vehicles/hour (1 every 2 seconds) -->\n    <flow id="heavy_flow_cars" type="car" route="main_route" begin="10" end="3600" period="2" departLane="random" departSpeed="max"/>\n</routes>'
         }
 
         scenario_name = f"{self.scenario_type}_scenario"
