@@ -1,6 +1,7 @@
 import traci
 import os
 import simpla  # Import Simpla
+import csv
 
 # Important details from congiguration files:
 # One simulation step is 1 second
@@ -148,9 +149,21 @@ def run_simulation():
             }
             
             # Print metrics for each step
-            print(f"Step {step}: {metrics}")
-            # Print number of vehicles in the simulation
-            # print(f"Step {step}: Number of vehicles: {num_vehicles}")
+            # print(f"Step {step}: {metrics}")
+            
+            # Save every fifth step's data into a CSV file
+            if step % 5 == 0:
+                output_file = "simulation_metrics.csv"
+                
+                # Overwrite the file on the first step
+                mode = "w" if step == 10 else "a"
+                
+                with open(output_file, mode=mode, newline="") as csv_file:
+                    fieldnames = metrics.keys()
+                    writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+                    
+                    # Write the metrics for the current step
+                    writer.writerow(metrics)
 
     finally:
         traci.close()  # Ensure SUMO closes properly
