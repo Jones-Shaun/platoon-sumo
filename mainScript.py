@@ -37,9 +37,9 @@ southbound_edges = [
 def run_simulation():
     # Start SUMO simulation
     sumo_binary = "sumo-gui"  # Use "sumo-gui" for gui mode
-    sumo_config = os.path.join(os.getcwd(), "generated_configs", "traffic", "platoon_only_scenario.sumocfg")
+    # sumo_config = os.path.join(os.getcwd(), "generated_configs", "traffic", "platoon_only_scenario.sumocfg")
     # sumo_config = os.path.join(os.getcwd(), "generated_configs", "traffic", "light_traffic_scenario.sumocfg")
-    # sumo_config = os.path.join(os.getcwd(), "generated_configs", "traffic", "heavy_traffic_scenario.sumocfg")
+    sumo_config = os.path.join(os.getcwd(), "generated_configs", "traffic", "heavy_traffic_scenario.sumocfg")
     simpla_config = os.path.join(os.getcwd(), "generated_configs", "simpla", "simpla.xml")
 
     # Ensure the required files exist
