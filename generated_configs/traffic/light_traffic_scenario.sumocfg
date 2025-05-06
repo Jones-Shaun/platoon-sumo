@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
     <configuration>
         <input>
-            <net-file value="C:\Users\jones\Documents\GMU\Spring 2025\CS690\Projects\use_this\platoon-sumo\osm\osm.net.xml"/>
-            <route-files value="C:\Users\jones\Documents\GMU\Spring 2025\CS690\Projects\use_this\platoon-sumo\generated_configs\traffic\light_traffic_scenario_routes.xml"/>
-            <additional-files value="C:\Users\jones\Documents\GMU\Spring 2025\CS690\Projects\use_this\platoon-sumo\osm\osm.poly.xml.gz "/>
+            <net-file value="/Users/fredericklough/Documents/GMU/CS690/FinalProject/Git/platoon-sumo/osm/osm.net.xml"/>
+            <route-files value="/Users/fredericklough/Documents/GMU/CS690/FinalProject/Git/platoon-sumo/generated_configs/traffic/light_traffic_scenario_routes.xml"/>
+            <additional-files value="/Users/fredericklough/Documents/GMU/CS690/FinalProject/Git/platoon-sumo/osm/osm.poly.xml.gz"/>
         </input>
         <time>
             <begin value="0"/>

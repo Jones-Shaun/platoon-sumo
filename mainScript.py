@@ -9,6 +9,7 @@ import simpla  # Import Simpla
 import csv
 
 
+
 # Important details from congiguration files:
 # One simulation step is 1 second
 # Simulation time is 3600 seconds (1 hour)

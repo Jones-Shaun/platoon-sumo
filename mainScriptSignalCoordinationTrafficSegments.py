@@ -16,6 +16,7 @@ import json # Import the json library
 # This block tries to add the SUMO tools directory to the system path.
 # It's important for finding the traci and sumolib modules if they aren't
 # installed directly in the environment (though installing with conda/pip is preferred).
+
 if 'SUMO_HOME' in os.environ:
     sys.path.append(os.path.join(os.environ['SUMO_HOME'], 'tools'))
 
