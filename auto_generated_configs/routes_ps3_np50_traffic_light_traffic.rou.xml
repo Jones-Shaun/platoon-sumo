@@ -1,0 +1,60 @@
+<routes>
+    <vType id="truck" accel="1.0" decel="3.0" sigma="0.5" length="10" minGap="3" maxSpeed="22.352" color="1,1,0"/>
+    <vType id="car" accel="1.5" decel="4.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="22.352" color="0.5,0.5,0.5"/>
+    <vType id="truck_platoon_leader" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="2" maxSpeed="22.352" color="0.8,0.4,0"/>
+    <vType id="truck_platoon_follower" accel="1.0" decel="3.0" sigma="0.0" length="10" minGap="0.5" maxSpeed="22.352" color="0.8,0.8,0"/>
+
+    <route id="main_route" edges="228470926 1318032192 1318032193 1318032191#0 228463837 173228852"/>
+    <flow id="light_flow" type="car" route="main_route" begin="0" end="3600" period="12" departLane="random" departSpeed="max"/>
+
+    <flow id="truck_platoon_0" type="truck" route="main_route" begin="40" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_1" type="truck" route="main_route" begin="80" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_2" type="truck" route="main_route" begin="120" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_3" type="truck" route="main_route" begin="160" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_4" type="truck" route="main_route" begin="200" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_5" type="truck" route="main_route" begin="240" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_6" type="truck" route="main_route" begin="280" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_7" type="truck" route="main_route" begin="320" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_8" type="truck" route="main_route" begin="360" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_9" type="truck" route="main_route" begin="400" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_10" type="truck" route="main_route" begin="440" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_11" type="truck" route="main_route" begin="480" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_12" type="truck" route="main_route" begin="520" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_13" type="truck" route="main_route" begin="560" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_14" type="truck" route="main_route" begin="600" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_15" type="truck" route="main_route" begin="640" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_16" type="truck" route="main_route" begin="680" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_17" type="truck" route="main_route" begin="720" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_18" type="truck" route="main_route" begin="760" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_19" type="truck" route="main_route" begin="800" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_20" type="truck" route="main_route" begin="840" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_21" type="truck" route="main_route" begin="880" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_22" type="truck" route="main_route" begin="920" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_23" type="truck" route="main_route" begin="960" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_24" type="truck" route="main_route" begin="1000" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_25" type="truck" route="main_route" begin="1040" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_26" type="truck" route="main_route" begin="1080" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_27" type="truck" route="main_route" begin="1120" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_28" type="truck" route="main_route" begin="1160" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_29" type="truck" route="main_route" begin="1200" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_30" type="truck" route="main_route" begin="1240" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_31" type="truck" route="main_route" begin="1280" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_32" type="truck" route="main_route" begin="1320" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_33" type="truck" route="main_route" begin="1360" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_34" type="truck" route="main_route" begin="1400" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_35" type="truck" route="main_route" begin="1440" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_36" type="truck" route="main_route" begin="1480" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_37" type="truck" route="main_route" begin="1520" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_38" type="truck" route="main_route" begin="1560" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_39" type="truck" route="main_route" begin="1600" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_40" type="truck" route="main_route" begin="1640" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_41" type="truck" route="main_route" begin="1680" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_42" type="truck" route="main_route" begin="1720" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_43" type="truck" route="main_route" begin="1760" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_44" type="truck" route="main_route" begin="1800" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_45" type="truck" route="main_route" begin="1840" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_46" type="truck" route="main_route" begin="1880" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_47" type="truck" route="main_route" begin="1920" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_48" type="truck" route="main_route" begin="1960" number="3" departLane="0" departSpeed="22.352" period="1"/>
+    <flow id="truck_platoon_49" type="truck" route="main_route" begin="2000" number="3" departLane="0" departSpeed="22.352" period="1"/>
+</routes>

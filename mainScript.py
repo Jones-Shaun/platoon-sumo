@@ -1,7 +1,13 @@
+import sys
+import os
+if 'SUMO_HOME' in os.environ:
+    sys.path.append(os.path.join(os.environ['SUMO_HOME'], 'tools'))
+
 import traci
 import os
 import simpla  # Import Simpla
 import csv
+
 
 # Important details from congiguration files:
 # One simulation step is 1 second

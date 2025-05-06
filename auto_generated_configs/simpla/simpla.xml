@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+    <configuration>
+        <vehicleSelectors value="truck"/>  <maxVehicleLength value="12.0"/>
+        <maxPlatoonGap value="10.0"/>
+        <catchupHeadway value="2.0"/>
+        <platoonSplitTime value="3.0"/>
+
+        <managedLanes value=""/>
+        <mingap value="0.5"/>
+        <catchupSpeed value="0.15"/>  <switchImpatienceFactor value="1.0"/>
+
+        <lcMode value="597"/>
+        <speedFactor value="1.0"/>
+        <verbosity value="3"/>
+        <vTypeMap original="truck" leader="truck_platoon_leader" follower="truck_platoon_follower"/>
+    </configuration>
