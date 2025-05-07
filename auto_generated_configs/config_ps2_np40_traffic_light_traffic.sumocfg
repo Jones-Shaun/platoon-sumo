@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+    <configuration>
+        <input>
+            <net-file value="/Users/fredericklough/Documents/GMU/CS690/FinalProject/Git/platoon-sumo/osm/osm.net.xml"/>
+            <route-files value="/Users/fredericklough/Documents/GMU/CS690/FinalProject/Git/platoon-sumo/auto_generated_configs/routes_ps2_np40_traffic_light_traffic.rou.xml"/>
+            <additional-files value="/Users/fredericklough/Documents/GMU/CS690/FinalProject/Git/platoon-sumo/osm/osm.poly.xml.gz"/>
+        </input>
+        <time>
+            <begin value="0"/>
+            <end value="3600"/>
+        </time>
+        <processing>
+            <lateral-resolution value="0.13"/>
+        </processing>
+        <report>
+            <verbose value="true"/>
+            <no-step-log value="true"/>
+        </report>
+        <gui_only>
+            <start value="true"/>
+        </gui_only>
+        <random_number>
+            <seed value="23423"/>
+        </random_number>
+    </configuration>

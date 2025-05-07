@@ -1,13 +1,12 @@
+import os
 import sys
-import os
-if 'SUMO_HOME' in os.environ:
-    sys.path.append(os.path.join(os.environ['SUMO_HOME'], 'tools'))
 
-import traci
-import os
-import simpla  # Import Simpla
 import csv
+if "SUMO_HOME" in os.environ:
+    sys.path.append(os.path.join(os.environ["SUMO_HOME"], "tools"))
 
+import simpla  # Import Simpla
+import traci
 
 
 # Important details from congiguration files:
