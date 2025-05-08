@@ -1,14 +1,12 @@
 """
 This script generates different traffic scenarios for SUMO using the SUMO Traffic Simulation Framework.
-It creates a configuration file for each scenario type (platoon_only, light_traffic, heavy_traffic) and
+It creates a configuration file for each scenario type (light_traffic, heavy_traffic) and
 saves them in the specified directory.
-It also generates a simpla.xml file for platoon analysis using the SUMO Traffic Simulation Framework.
 """
 import dataclasses
 import os
 import sys
 
-# Import sumolib - make sure your Conda environment is activated and SUMO is installed
 # and SUMO_HOME is set correctly for sumolib to function fully.
 if 'SUMO_HOME' in os.environ:
     sys.path.append(os.path.join(os.environ['SUMO_HOME'], 'tools'))
@@ -22,8 +20,6 @@ from pathlib import Path, PurePath
 class PlatoonGenerator:
     """
     Class to generate different traffic scenarios for SUMO using the SUMO Traffic Simulation Framework.
-    It creates a traffic demand configuration file for each scenario type (platoon_only, light_traffic, heavy_traffic) and
-    a simpla.xml file for platooning.
     """
     # Define paths
     target_dir = Path.cwd()
@@ -85,7 +81,6 @@ class PlatoonGenerator:
             raise FileNotFoundError(f"Network file not found: {base_net_path}")
 
         # Define the main route edges
-        # These are hardcoded for now based on your provided lists
         northbound_edges = [
             "228470926", "1318032192", "1318032193", "1318032191#0", "228463837", "173228852"
         ]

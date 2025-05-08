@@ -1,28 +1,28 @@
 #!/usr/bin/env python3
 """
-runMultipleSimulations.py
 Runs every scenario in auto_generated_configs twice:
-  • fixed‑time (no coordination)
-  • platoon‑aware green‑extension (coordination)
+    fixed‑time (no coordination)
+    platoon‑aware green‑extension (coordination)
 
 Outputs one CSV per run in simulation_metrics/ with names like:
-  ps4_np50_traffic_light_coordination.csv
-  ps4_np50_traffic_light_nocoordination.csv
+    ps4_np50_traffic_light_coordination.csv
+    ps4_np50_traffic_light_nocoordination.csv
+    files analyzed in simulation_metrics/metrics_analysis.ipynb
 """
 import os, sys, re, csv, glob
 from pathlib import Path
 
-# ── SUMO libs ──────────────────────────────────────────
+# SUMO libs
 if "SUMO_HOME" in os.environ:
     sys.path.append(os.path.join(os.environ["SUMO_HOME"], "tools"))
 from sumolib import checkBinary
 import traci, simpla
 
-# ── constants ──────────────────────────────────────────
-SIM_TIME     = 3600
-AUTO_DIR     = Path("auto_generated_configs")
-SIMPLA_CFG   = AUTO_DIR / "simpla" / "simpla.xml"
-OUT_DIR      = Path("simulation_metrics"); OUT_DIR.mkdir(exist_ok=True)
+# constants
+SIM_TIME = 3600
+AUTO_DIR = Path("auto_generated_configs")
+SIMPLA_CFG = AUTO_DIR / "simpla" / "simpla.xml"
+OUT_DIR = Path("simulation_metrics"); OUT_DIR.mkdir(exist_ok=True)
 PLATOON_DIST = 150      # m to stop‑line that triggers extension
 
 NB_EDGES = [
@@ -36,7 +36,7 @@ SB_EDGES = [
 ]
 MAIN_EDGES = set(NB_EDGES + SB_EDGES)
 
-# ── utilities ──────────────────────────────────────────
+# utilities
 def scenario_cfgs():
     pat = str(AUTO_DIR / "config_ps*_np*_traffic_*_traffic.sumocfg")
     return sorted(glob.glob(pat))
@@ -56,7 +56,7 @@ def edge_speed(edges):
             n += v
     return tot / n if n else 0
 
-# ── coordination helpers ───────────────────────────────
+# coordination helpers
 def derive_main_green(main_edges):
     """Return {tl: [phase indices where main‑road is green]}"""
     res = {}
@@ -103,12 +103,12 @@ def apply_coordination(MAIN_GREEN, phase_idx, phase_dur, phase_time):
                 phase_dur[tl] = traci.trafficlight.getCompleteRedYellowGreenDefinition(tl)[0].phases[nxt].duration
                 phase_time[tl] = 0
 
-# ── simulation core ────────────────────────────────────
+# simulation core
 def run_one(cfg_path: Path, csv_path: Path, use_coord: bool):
     traci.start([checkBinary("sumo"), "-c", str(cfg_path)])
     simpla.load(str(SIMPLA_CFG))
 
-    # TL timing init
+    # Traffic light timing initialization
     tl_ids = traci.trafficlight.getIDList()
     phase_idx = {tl: traci.trafficlight.getPhase(tl) for tl in tl_ids}
     phase_dur = {
@@ -160,7 +160,7 @@ def run_one(cfg_path: Path, csv_path: Path, use_coord: bool):
             writer.writerow(row)
     traci.close()
 
-# ── batch loop ─────────────────────────────────────────
+
 def main():
     if not SIMPLA_CFG.exists():
         print("Missing Simpla config:", SIMPLA_CFG); sys.exit(1)
@@ -176,109 +176,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# #!/usr/bin/env python3
-# """
-# runMultipleSimulations.py
-# Batch‑run every .sumocfg in auto_generated_configs and save metrics to
-# simulation_metrics/ps<N>_np<M>_traffic_<type>.csv
-# """
-# import os, sys, re, csv, glob
-# from pathlib import Path
-#
-# if "SUMO_HOME" in os.environ:
-#     sys.path.append(os.path.join(os.environ["SUMO_HOME"], "tools"))
-#
-# from sumolib import checkBinary
-# import traci, simpla
-#
-# # ───────────────────────── configuration ─────────────────────────
-# SIM_TIME = 3600
-# AUTO_DIR = Path("auto_generated_configs")
-# SIMPLA_CFG = AUTO_DIR / "simpla" / "simpla.xml"
-# OUT_DIR = Path("simulation_metrics"); OUT_DIR.mkdir(exist_ok=True)
-#
-# northbound_edges = [
-#     "228470926","1318032192","1318032193",
-#     "1318032191#0","228463837","173228852",
-# ]
-# southbound_edges = [
-#     "116044310#0","173228850#0",
-#     "173228850#0-AddedOffRampEdge","173228850#1",
-#     "228463846#2",
-# ]
-# # ───────────────────────── helpers ─────────────────────────
-# def scenario_files():
-#     pat = str(AUTO_DIR / "config_ps*_np*_traffic_*_traffic.sumocfg")
-#     return sorted(glob.glob(pat))
-#
-# def parse_name(fname: str):
-#     m = re.search(r"config_ps(\d+)_np(\d+)_traffic_(\w+)_traffic", fname)
-#     if not m:
-#         raise ValueError(f"Bad name: {fname}")
-#     return f"ps{m.group(1)}_np{m.group(2)}_traffic_{m.group(3)}"
-#
-# def edge_speed(edges):
-#     tot=n=0
-#     for e in edges:
-#         if e in traci.edge.getIDList():
-#             v=traci.edge.getLastStepVehicleNumber(e)
-#             tot+=traci.edge.getLastStepMeanSpeed(e)*v
-#             n+=v
-#     return tot/n if n else 0
-# # ───────────────────────── runner ─────────────────────────
-# def run_scenario(cfg_path: Path, csv_path: Path):
-#     traci.start([checkBinary("sumo"), "-c", str(cfg_path)])
-#     simpla.load(str(SIMPLA_CFG))
-#
-#     with open(csv_path,"w",newline="") as fh:
-#         writer=None
-#         step=0
-#         while step < SIM_TIME:
-#             step+=1
-#             traci.simulationStep()
-#
-#             veh_ids=traci.vehicle.getIDList()
-#             num=len(veh_ids)
-#             spd_all=sum(traci.vehicle.getSpeed(v) for v in veh_ids)/num if num else 0
-#
-#             pos=[]
-#             for e in northbound_edges:
-#                 if e in traci.edge.getIDList():
-#                     for ln in range(traci.edge.getLaneNumber(e)):
-#                         pos+=[traci.vehicle.getLanePosition(v)
-#                               for v in traci.lane.getLastStepVehicleIDs(f"{e}_{ln}")]
-#             pos.sort(reverse=True)
-#             gaps=[pos[i]-pos[i+1] for i in range(len(pos)-1)]
-#             avg_gap=sum(gaps)/len(gaps) if gaps else 0
-#
-#             flow_nb=sum(traci.edge.getLastStepVehicleNumber(e) for e in northbound_edges if e in traci.edge.getIDList())
-#             flow_sb=sum(traci.edge.getLastStepVehicleNumber(e) for e in southbound_edges if e in traci.edge.getIDList())
-#
-#             row = {
-#                 "step":step,"num_vehicles":num,"avg_gap_nb":avg_gap,
-#                 "flow_nb":flow_nb,"flow_sb":flow_sb,
-#                 "spd_nb":edge_speed(northbound_edges),
-#                 "spd_sb":edge_speed(southbound_edges),
-#                 "spd_all":spd_all,
-#             }
-#             if writer is None:
-#                 writer=csv.DictWriter(fh,fieldnames=row.keys())
-#                 writer.writeheader()
-#             writer.writerow(row)
-#     traci.close()
-#
-# # ───────────────────────── main loop ─────────────────────────
-# def main():
-#     if not SIMPLA_CFG.exists():
-#         print("Simpla config missing:", SIMPLA_CFG); sys.exit(1)
-#     for cfg in scenario_files():
-#         tag = parse_name(Path(cfg).stem)
-#         out_csv = OUT_DIR / f"{tag}.csv"
-#         print(f"Running {tag} …")
-#         run_scenario(Path(cfg), out_csv)
-#         print(f"  → metrics saved to {out_csv}")
-#
-# if __name__ == "__main__":
-#     main()

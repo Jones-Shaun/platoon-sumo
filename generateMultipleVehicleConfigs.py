@@ -18,15 +18,16 @@ import itertools # Import itertools to easily generate combinations
 if 'SUMO_HOME' in os.environ:
     sys.path.append(os.path.join(os.environ['SUMO_HOME'], 'tools'))
 
-# --- Scenario Generation Constants ---
+# Scenario Generation Constants
 # Define the ranges and options for the variables as constants
 # PLATOON_SIZES = range(2, 7)         # 2 to 6 inclusive
 # PLATOON_SIZES = range(2, 4)         # 2 to 6 inclusive
-PLATOON_SIZES = [2, 4, 6]
-# PLATOON_SIZES = [2]
+# PLATOON_SIZES = [2, 4, 6]
+PLATOON_SIZES = [0]
 
 # NUM_PLATOONS_OPTIONS = range(0, 51, 10) # 0, 10, 20, 30, 40, 50
-NUM_PLATOONS_OPTIONS = [10, 25, 40]  # 0, 10, 20, 30, 40, 50
+# NUM_PLATOONS_OPTIONS = [10, 25, 40]  # 0, 10, 20, 30, 40, 50
+NUM_PLATOONS_OPTIONS = [0]
 TRAFFIC_TYPES = ["light_traffic", "heavy_traffic"]
 # TRAFFIC_TYPES = ["light_traffic"]
 # Define the base directory name for generated configurations
