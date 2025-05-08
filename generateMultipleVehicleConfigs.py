@@ -32,8 +32,6 @@ TRAFFIC_TYPES = ["light_traffic", "heavy_traffic"]
 # TRAFFIC_TYPES = ["light_traffic"]
 # Define the base directory name for generated configurations
 GENERATED_CONFIGS_DIR_NAME = "auto_generated_configs"
-# --- End Scenario Generation Constants ---
-
 
 @dataclasses.dataclass
 class ScenarioGenerator:
