@@ -23,7 +23,7 @@ SIM_TIME = 3600
 AUTO_DIR = Path("auto_generated_configs")
 SIMPLA_CFG = AUTO_DIR / "simpla" / "simpla.xml"
 OUT_DIR = Path("simulation_metrics"); OUT_DIR.mkdir(exist_ok=True)
-PLATOON_DIST = 150      # m to stop‑line that triggers extension
+PLATOON_DIST = 150      # meters upstream that trigger green hold
 
 NB_EDGES = [
     "228470926","1318032192","1318032193",
@@ -34,7 +34,7 @@ SB_EDGES = [
     "173228850#0-AddedOffRampEdge","173228850#1",
     "228463846#2",
 ]
-MAIN_EDGES = set(NB_EDGES + SB_EDGES)
+MAIN_EDGES = set(NB_EDGES + SB_EDGES) #only ended up using Northbound sensor readings
 
 # utilities
 def scenario_cfgs():
@@ -42,29 +42,39 @@ def scenario_cfgs():
     return sorted(glob.glob(pat))
 
 def tag_from_cfg(cfg: Path) -> str:
+    """
+    Extract infor from file name such as config_ps4_np50_traffic_light_traffic.sumocfg
+    """
     m = re.search(r"config_(ps\d+_np\d+_traffic_\w+)_traffic", cfg.stem)
     if not m:
         raise ValueError(f"Unexpected cfg name: {cfg.name}")
     return m.group(1)
 
+# Function gets mean speed of edges
 def edge_speed(edges):
+    # determine speed of vehicles on edge
     tot = n = 0
     for e in edges:
         if e in traci.edge.getIDList():
-            v = traci.edge.getLastStepVehicleNumber(e)
-            tot += traci.edge.getLastStepMeanSpeed(e) * v
+            v = traci.edge.getLastStepVehicleNumber(e) # how many vehicles were on that edge in the last simulation step
+            tot += traci.edge.getLastStepMeanSpeed(e) * v # the mean speed of those vehicles
             n += v
     return tot / n if n else 0
 
 # coordination helpers
 def derive_main_green(main_edges):
-    """Return {tl: [phase indices where main‑road is green]}"""
+    """
+    main_edges: edges we care about for m
+    Build a dict {tl_id: [phase indices]} where each stored phase already
+    shows green for at least one signal on the priority main_edges."""
     res = {}
     for tl in traci.trafficlight.getIDList():
+        # all phases of this traffic light
         phases = traci.trafficlight.getCompleteRedYellowGreenDefinition(tl)[0].phases
+        # find signal indices serving the main corridor
         sig_on_main = {
-            i for i, link in enumerate(
-                [l[0] for sub in traci.trafficlight.getControlledLinks(tl) for l in sub]
+            i for i, link in enumerate(  # "i" is signal index inside the TL program
+                [l[0] for sub in traci.trafficlight.getControlledLinks(tl) for l in sub]  # l[0] = incoming lane id
             )
             if traci.lane.getEdgeID(link) in main_edges
         }
@@ -77,18 +87,21 @@ def derive_main_green(main_edges):
     return res
 
 def apply_coordination(MAIN_GREEN, phase_idx, phase_dur, phase_time):
-    """green‑extension logic executed each step"""
-    for tl in phase_idx:
-        phase_time[tl] += 1
-        on_main = phase_idx[tl] in MAIN_GREEN.get(tl, [])
+    """ Called once per simulation step when coordination is enabled.
+    Decides for each traffic light whether to hold the green longer.
+    """
+    for tl in phase_idx:    # Loop over every traffic light
+        phase_time[tl] += 1     # Advance simulation
+        on_main = phase_idx[tl] in MAIN_GREEN.get(tl, [])   # Current phase one of the main‑road green phases
         platoon_close = False
-        for lset in traci.trafficlight.getControlledLinks(tl):
+        # Search lanes for a platoon truck close to the stop line
+        for lset in traci.trafficlight.getControlledLinks(tl):  # Each lset is a tuple list for one signal
             inc = lset[0][0]
             if traci.lane.getEdgeID(inc) not in MAIN_EDGES:
                 continue
             for v in traci.lane.getLastStepVehicleIDs(inc):
                 vt = traci.vehicle.getTypeID(v).lower()
-                if "truck" in vt and "platoon" in vt:
+                if "truck" in vt and "platoon" in vt:  # if it's a platooning truck
                     dist = traci.lane.getLength(inc) - traci.vehicle.getLanePosition(v)
                     if dist <= PLATOON_DIST:
                         platoon_close = True; break
@@ -172,7 +185,7 @@ def main():
             mode = "coord" if coord_flag else "baseline"
             print(f"Running {tag}  [{mode}] …")
             run_one(Path(cfg_file), out_csv, use_coord=coord_flag)
-            print(f"  → saved {out_csv}")
+            print(f" → saved {out_csv}")
 
 if __name__ == "__main__":
     main()
