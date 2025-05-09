@@ -9,5 +9,5 @@ How to run:
 - Run generateMultipleVehicleConfigs.py to populate auto_generated_configs
 - Run runMultipleSimulations.py to run the simulation
 - Metric csv files appear in simulation_metrics
-- Metrics_analysis.ipynb processes files in simulation_metrics folder
+- Run metrics_analysis.ipynb to processes files in simulation_metrics folder
 - Final Output: Visualizations
