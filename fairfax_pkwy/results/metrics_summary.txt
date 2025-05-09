@@ -1,7 +1,0 @@
-Traffic Metrics Summary
-======================
-
-Average Density: 0.0087
-Average Flow: 1130.4286
-Average Speed: 8.2648
-Average Fuel Consumption: 1682.9038
