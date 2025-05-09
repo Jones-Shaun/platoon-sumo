@@ -42,7 +42,7 @@ class PlatoonGenerator:
     platoon_duration: int = 300 # Not currently used in flow definition, but kept
     platoon_start_time: int = 0 # Not currently used in flow definition, but kept
 
-    # Scenario type (default)
+    # Scenario type default
     scenario_type: str = "platoon_only"
 
     # Simpla configuration XML as a string

@@ -93,7 +93,7 @@ def apply_coordination(MAIN_GREEN, phase_idx, phase_dur, phase_time):
     for tl in phase_idx:    # Loop over every traffic light
         phase_time[tl] += 1     # Advance simulation
         on_main = phase_idx[tl] in MAIN_GREEN.get(tl, [])   # Current phase one of the main‑road green phases
-        platoon_close = False
+        platoon_close = False  # No platoon close
         # Search lanes for a platoon truck close to the stop line
         for lset in traci.trafficlight.getControlledLinks(tl):  # Each lset is a tuple list for one signal
             inc = lset[0][0]
